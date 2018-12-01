@@ -119,11 +119,27 @@ func Intersect(c1 ICircle, c2 ICircle) bool {
 	return Dist2(c1, c2) < sqr(c1.R()+c2.R())+eps
 }
 
+func (c1 *Circle) IntersectCircle(c2 ICircle) bool {
+	return Dist2(c1, c2) < sqr(c1.R()+c2.R())+eps
+}
+
+func (c1 *CircleId) IntersectCircle(c2 ICircle) bool {
+	return Dist2(c1, c2) < sqr(c1.R()+c2.R())+eps
+}
+
 func AnyIn(c1 ICircle, c2 ICircle) bool {
 	return Dist2(c1, c2) < sqr(c1.R()-c2.R())+eps
 }
 
 func In(c ICircle, p IPoint) bool {
+	return Dist2(c, p) < c.R()+eps
+}
+
+func (p *Point) IntersectCircle(c ICircle) bool {
+	return Dist2(c, p) < c.R()+eps
+}
+
+func (p *RelatedPoint) IntersectCircle(c ICircle) bool {
 	return Dist2(c, p) < c.R()+eps
 }
 
@@ -162,7 +178,7 @@ func TangentsPointsFromPoint(c *CircleId, p IPoint, add float64) []RelatedPoint 
 	return res
 }
 
-func SegmentIntersectsCircle(s *Segment, c ICircle) bool {
+func (s *Segment) IntersectCircle(c ICircle) bool {
 	x01 := s.p1.x - c.X()
 	y01 := s.p1.y - c.Y()
 	x02 := s.p2.x - c.X()
@@ -223,37 +239,11 @@ func newCircleStorage(circles []CircleId) *CircleStorage {
 	return &cs
 }
 
-func (cs *CircleStorage) IntersectPoint(p IPoint) bool {
+func (cs *CircleStorage) Intersect(figure interface{ IntersectCircle(c ICircle) bool }) bool {
 	for i := 0; i < len(cs.clusters); i++ {
-		if In(&cs.clusters[i], p) {
+		if figure.IntersectCircle(&cs.clusters[i]) {
 			for j := 0; j < len(cs.circles[i]); j++ {
-				if In(&cs.circles[i][j], p) {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
-func (cs *CircleStorage) IntersectSegment(s *Segment) bool {
-	for i := 0; i < len(cs.clusters); i++ {
-		if SegmentIntersectsCircle(s, &cs.clusters[i]) {
-			for j := 0; j < len(cs.circles[i]); j++ {
-				if SegmentIntersectsCircle(s, &cs.circles[i][j]) {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
-func (cs *CircleStorage) IntersectCircle(c ICircle) bool {
-	for i := 0; i < len(cs.clusters); i++ {
-		if Intersect(c, &cs.clusters[i]) {
-			for j := 0; j < len(cs.circles[i]); j++ {
-				if Intersect(c, &cs.circles[i][j]) {
+				if figure.IntersectCircle(&cs.circles[i][j]) {
 					return true
 				}
 			}

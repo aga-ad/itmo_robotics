@@ -76,49 +76,27 @@ func MinPath(dist [][]float64, start, end int) []int {
 	return res
 }
 
-func MakeGraph(circles []CircleId, add float64) ([]RelatedPoint, [][]float64, int, int) {
-	fmt.Println("making graph. circles:", len(circles))
+func MakeGraph(gm *Map, add float64) ([]RelatedPoint, [][]float64, int, int) {
+	fmt.Println("making graph. circles:", len(gm.Circles.All))
 	v := make([]RelatedPoint, 0)
 	v = append(v, RelatedPoint{Point{0, 0}, -1})
 	v = append(v, RelatedPoint{Point{1, 1}, -2})
-	for _, c := range circles {
-		//v = append(v, TangentsPointsFromPoint(&c, &v[0], add)...)
-		//v = append(v, TangentsPointsFromPoint(&c, &v[1], add)...)
+	for _, c := range gm.Circles.All {
 		for k := 0; k < 2; k++ {
 			for _, p := range TangentsPointsFromPoint(&c, &v[k], add) {
-				f := true
 				s := Segment{v[k].Point, p.Point}
-				for _, ic := range circles {
-					if SegmentIntersectsCircle(&s, &ic) {
-						f = false
-						break
-					}
-				}
-				if f && p.X() >= 0 && p.Y() >= 0 && p.X() <= 1 && p.Y() <= 1 {
+				if p.X() >= 0 && p.Y() >= 0 && p.X() <= 1 && p.Y() <= 1 && !gm.Circles.Intersect(&s) {
 					v = append(v, p)
 				}
 			}
 		}
-		/*for _, p := range TangentsPointsFromPoint(&c, &v[1], add) {
-			f := true
-			s := Segment{v[1].Point, p.Point}
-			if p.X() >= 0 && p.Y() >= 0 && p.X() <= 1 && p.Y() <= 1 {
-				v = append(v, p)
-			}
-		}*/
 	}
-	for i := 0; i < len(circles); i++ {
-		for j := i + 1; j < len(circles); j++ {
-			tangents := TangentsPoints(&circles[i], &circles[j], add)
+	for i := 0; i < len(gm.Circles.All); i++ {
+		for j := i + 1; j < len(gm.Circles.All); j++ {
+			tangents := TangentsPoints(&gm.Circles.All[i], &gm.Circles.All[j], add)
 			for i := 0; i < len(tangents); i += 2 {
-				f := true
 				s := Segment{tangents[i].Point, tangents[i+1].Point}
-				for _, ic := range circles {
-					if SegmentIntersectsCircle(&s, &ic) {
-						f = false
-						break
-					}
-				}
+				f := !gm.Circles.Intersect(&s)
 				for k := 0; f && k < 2; k++ {
 					if f && tangents[i+k].X() >= 0 && tangents[i+k].Y() >= 0 && tangents[i+k].X() <= 1 && tangents[i+k].Y() <= 1 {
 						v = append(v, tangents[i+k])
@@ -141,11 +119,7 @@ func MakeGraph(circles []CircleId, add float64) ([]RelatedPoint, [][]float64, in
 				continue
 			}
 			s := Segment{v[i].Point, v[j].Point}
-			intersect := false
-			for k := 0; k < len(circles) && !intersect; k++ {
-				intersect = SegmentIntersectsCircle(&s, &circles[k])
-			}
-			if !intersect {
+			if !gm.Circles.Intersect(&s) {
 				dist[i][j] = Dist(&v[i], &v[j])
 			} else {
 				dist[i][j] = math.Inf(1)
@@ -241,7 +215,7 @@ func Run(x0, v0 *Point, a []Point, gameMap *Map) ([]Point, []Point) {
 
 func Strategy(gameMap *Map) ([]Point, []Point, []Point) {
 	add := 0.001
-	vertices, dist, start, end := MakeGraph(gameMap.Circles.All, add)
+	vertices, dist, start, end := MakeGraph(gameMap, add)
 	fmt.Println("Made graph", len(vertices))
 	path := MinPath(dist, start, end)
 	fmt.Println("Made path", len(path))
