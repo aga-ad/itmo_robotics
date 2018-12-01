@@ -77,26 +77,26 @@ func MinPath(dist [][]float64, start, end int) []int {
 }
 
 func MakeGraph(gm *Map, add float64) ([]RelatedPoint, [][]float64, int, int) {
-	fmt.Println("making graph. circles:", len(gm.Circles.All))
+	fmt.Println("making graph. circles:", len(gm.Circles))
 	v := make([]RelatedPoint, 0)
 	v = append(v, RelatedPoint{Point{0, 0}, -1})
 	v = append(v, RelatedPoint{Point{1, 1}, -2})
-	for _, c := range gm.Circles.All {
+	for _, c := range gm.Circles {
 		for k := 0; k < 2; k++ {
 			for _, p := range TangentsPointsFromPoint(&c, &v[k], add) {
 				s := Segment{v[k].Point, p.Point}
-				if p.X() >= 0 && p.Y() >= 0 && p.X() <= 1 && p.Y() <= 1 && !gm.Circles.Intersect(&s) {
+				if p.X() >= 0 && p.Y() >= 0 && p.X() <= 1 && p.Y() <= 1 && !gm.Storage.Intersect(&s) {
 					v = append(v, p)
 				}
 			}
 		}
 	}
-	for i := 0; i < len(gm.Circles.All); i++ {
-		for j := i + 1; j < len(gm.Circles.All); j++ {
-			tangents := TangentsPoints(&gm.Circles.All[i], &gm.Circles.All[j], add)
+	for i := 0; i < len(gm.Circles); i++ {
+		for j := i + 1; j < len(gm.Circles); j++ {
+			tangents := TangentsPoints(&gm.Circles[i], &gm.Circles[j], add)
 			for i := 0; i < len(tangents); i += 2 {
 				s := Segment{tangents[i].Point, tangents[i+1].Point}
-				f := !gm.Circles.Intersect(&s)
+				f := !gm.Storage.Intersect(&s)
 				for k := 0; f && k < 2; k++ {
 					if f && tangents[i+k].X() >= 0 && tangents[i+k].Y() >= 0 && tangents[i+k].X() <= 1 && tangents[i+k].Y() <= 1 {
 						v = append(v, tangents[i+k])
@@ -119,7 +119,7 @@ func MakeGraph(gm *Map, add float64) ([]RelatedPoint, [][]float64, int, int) {
 				continue
 			}
 			s := Segment{v[i].Point, v[j].Point}
-			if !gm.Circles.Intersect(&s) {
+			if !gm.Storage.Intersect(&s) {
 				dist[i][j] = Dist(&v[i], &v[j])
 			} else {
 				dist[i][j] = math.Inf(1)
@@ -130,10 +130,11 @@ func MakeGraph(gm *Map, add float64) ([]RelatedPoint, [][]float64, int, int) {
 }
 
 type Map struct {
-	Name    string        `json:"name"`
-	Dt      float64       `json:"dt"`
-	Fmax    float64       `json:"Fmax"`
-	Circles CircleStorage `json:"circles"`
+	Name    string     `json:"name"`
+	Dt      float64    `json:"dt"`
+	Fmax    float64    `json:"Fmax"`
+	Circles []CircleId `json:"circles"`
+	Storage CircleStorage
 }
 
 var circleCounter = 0
@@ -152,14 +153,14 @@ func (c *CircleId) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (cs *CircleStorage) UnmarshalJSON(b []byte) error {
+/*func (cs *CircleStorage) UnmarshalJSON(b []byte) error {
 	c := make([]CircleId, 0)
 	if err := json.Unmarshal(b, &c); err != nil {
 		return err
 	}
 	*cs = *newCircleStorage(c)
 	return nil
-}
+}*/
 
 func ParseMap(filename string) (Map, error) {
 	data, err := ioutil.ReadFile(filename)
@@ -173,6 +174,7 @@ func ParseMap(filename string) (Map, error) {
 		panic("Can't parse")
 		//return Map{}, err
 	}
+	res.Storage = *newCircleStorage(res.Circles)
 	return res, err
 }
 

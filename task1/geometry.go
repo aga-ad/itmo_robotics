@@ -200,20 +200,20 @@ func (s *Segment) IntersectCircle(c ICircle) bool {
 type CircleStorage struct {
 	circles  [][]CircleId
 	clusters []Circle
-	All      []CircleId
+	all      []CircleId
 }
 
 func newCircleStorage(circles []CircleId) *CircleStorage {
 	cs := CircleStorage{}
 	cs.clusters = make([]Circle, int(math.Sqrt(float64(len(circles)))))
 	cs.circles = make([][]CircleId, len(cs.clusters))
-	cs.All = circles
+	cs.all = append([]CircleId{}, circles...)
 	for i := 0; i < len(cs.clusters); i++ {
 		cs.clusters[i].x = rand.Float64()
 		cs.clusters[i].y = rand.Float64()
 		cs.circles[i] = make([]CircleId, 0)
 	}
-	for _, c := range circles {
+	for _, c := range cs.all {
 		nearest := 0
 		for i := 1; i < len(cs.clusters); i++ {
 			if Dist2(&cs.clusters[nearest], &c.Point) > Dist2(&cs.clusters[i], &c.Point) {
@@ -240,13 +240,19 @@ func newCircleStorage(circles []CircleId) *CircleStorage {
 }
 
 func (cs *CircleStorage) Intersect(figure interface{ IntersectCircle(c ICircle) bool }) bool {
-	for i := 0; i < len(cs.clusters); i++ {
+	/*for i := 0; i < len(cs.clusters); i++ {
 		if figure.IntersectCircle(&cs.clusters[i]) {
 			for j := 0; j < len(cs.circles[i]); j++ {
 				if figure.IntersectCircle(&cs.circles[i][j]) {
 					return true
 				}
 			}
+		}
+	}*/
+	for i := 0; i < len(cs.all); i++ {
+		if figure.IntersectCircle(&cs.all[i]) {
+			cs.all[i], cs.all[i/2] = cs.all[i/2], cs.all[i]
+			return true
 		}
 	}
 	return false
