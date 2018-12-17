@@ -32,7 +32,7 @@ func main() {
 
 	fmt.Println(TangentsPoints(&c1, &c2))*/
 	maps := [...]string{"trivial", "gigant", "bumps", "harder", "cheese", "asteroids", "mess"}
-	run(maps[1])
+	run("files/" + maps[1])
 	// for _, mapName := range maps {
 	// 	run(mapName)
 	// }
