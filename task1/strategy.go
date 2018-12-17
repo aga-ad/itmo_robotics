@@ -216,34 +216,40 @@ func Run(x0, v0 *Point, a []Point, gameMap *Map) ([]Point, []Point) {
 }
 
 func Strategy(gameMap *Map) ([]Point, []Point, []Point) {
-	add := 0.001
-	vertices, dist, start, end := MakeGraph(gameMap, add)
-	fmt.Println("Made graph", len(vertices))
-	path := MinPath(dist, start, end)
-	fmt.Println("Made path", len(path))
+	bestPathLength := math.MaxInt64
+	bestX := make([]Point, 0)
+	bestV := make([]Point, 0)
+	bestA := make([]Point, 0)
+	for _, add := range [...]float64{0.001, 0.005, 0.01, 0.03} {
+		vertices, dist, start, end := MakeGraph(gameMap, add)
+		fmt.Println("Made graph", len(vertices))
+		path := MinPath(dist, start, end)
+		fmt.Println("Made path", len(path))
 
-	//fmt.Println(path)
-	//fmt.Println("WAY:")
+		//fmt.Println(path)
+		//fmt.Println("WAY:")
 
-	/*for _, ind := range path {
-		fmt.Println(vertices[ind])
-	}*/
-	resX := make([]Point, 0)
-	resV := make([]Point, 0)
-	resA := make([]Point, 0)
-	zeroV := Point{0, 0}
-	for i := 1; i < len(path); i++ {
-		a := LinearRun(&vertices[path[i-1]], &vertices[path[i]], gameMap)
-		x, v := Run(&vertices[path[i-1]].Point, &zeroV, a, gameMap)
-		resA = append(resA, a...)
-		resX = append(resX, x...)
-		resV = append(resV, v...)
+		/*for _, ind := range path {
+			fmt.Println(vertices[ind])
+		}*/
+		resX := make([]Point, 0)
+		resV := make([]Point, 0)
+		resA := make([]Point, 0)
+		zeroV := Point{0, 0}
+		for i := 1; i < len(path); i++ {
+			a := LinearRun(&vertices[path[i-1]], &vertices[path[i]], gameMap)
+			x, v := Run(&vertices[path[i-1]].Point, &zeroV, a, gameMap)
+			resA = append(resA, a...)
+			resX = append(resX, x...)
+			resV = append(resV, v...)
+		}
+		if len(resA) > 0 && bestPathLength > len(resA) {
+			bestX = resX
+			bestV = resV
+			bestA = resA
+			bestPathLength = len(resA)
+		}
+		fmt.Println("add = ", add, "  length = ", len(resA))
 	}
-	/*println("X")
-	fmt.Println(resX)
-	println("V")
-	println(resV)
-	println("A")
-	println(resA)*/
-	return resX, resV, resA
+	return bestX, bestV, bestA
 }
